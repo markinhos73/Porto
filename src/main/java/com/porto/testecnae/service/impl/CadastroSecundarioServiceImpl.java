@@ -24,7 +24,7 @@ public class CadastroSecundarioServiceImpl implements CadastroSecundarioService 
 
     @Override
     public CadastroSecundarioResponse cadastrar(CadastroSecundarioRequest request) {
-        var cnae = buscarCnae(request.codigoCnae());
+        var cnae = buscarCnaeParaCadastro(request.codigoCnae());
 
         var cadastro = CadastroSecundario.builder()
                 .nomeFantasia(request.nomeFantasia())
@@ -37,7 +37,7 @@ public class CadastroSecundarioServiceImpl implements CadastroSecundarioService 
 
     @Override
     public AtividadeEconomicaCnaeResponse validarCnae(String codigoCnae) {
-        var cnae = buscarCnae(codigoCnae);
+        var cnae = buscarCnaeParaCadastro(codigoCnae);
         return AtividadeEconomicaCnaeResponse.fromEntity(cnae);
     }
 
@@ -49,7 +49,7 @@ public class CadastroSecundarioServiceImpl implements CadastroSecundarioService 
                 .toList();
     }
 
-    private AtividadeEconomicaCnae buscarCnae(String codigoCnae) {
+    private AtividadeEconomicaCnae buscarCnaeParaCadastro(String codigoCnae) {
         return cnaeRepository.findByCodigo(codigoCnae)
                 .orElseThrow(() -> new ResponseStatusException(
                         HttpStatus.BAD_REQUEST, "CNAE " + codigoCnae + " não encontrado. Cadastro não permitido."
