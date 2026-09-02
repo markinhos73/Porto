@@ -9,7 +9,9 @@ import com.porto.testecnae.repository.AtividadeEconomicaCnaeRepository;
 import com.porto.testecnae.repository.CadastroSecundarioRepository;
 import com.porto.testecnae.service.CadastroSecundarioService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
 
@@ -22,7 +24,7 @@ public class CadastroSecundarioServiceImpl implements CadastroSecundarioService 
 
     @Override
     public CadastroSecundarioResponse cadastrar(CadastroSecundarioRequest request) {
-        var cnae = buscarCnaeParaCadastro(request.codigoCnae());
+        var cnae = buscarCnaeOuLancarExcecao(request.codigoCnae());
 
         var cadastro = CadastroSecundario.builder()
                 .nomeFantasia(request.nomeFantasia())
@@ -35,7 +37,8 @@ public class CadastroSecundarioServiceImpl implements CadastroSecundarioService 
 
     @Override
     public AtividadeEconomicaCnaeResponse validarCnae(String codigoCnae) {
-        return AtividadeEconomicaCnaeResponse.fromEntity(buscarCnaeParaValidacao(codigoCnae));
+        var cnae = buscarCnaeOuLancarExcecao(codigoCnae);
+        return AtividadeEconomicaCnaeResponse.fromEntity(cnae);
     }
 
     @Override
@@ -46,13 +49,10 @@ public class CadastroSecundarioServiceImpl implements CadastroSecundarioService 
                 .toList();
     }
 
-    private AtividadeEconomicaCnae buscarCnaeParaCadastro(String codigoCnae) {
+    private AtividadeEconomicaCnae buscarCnaeOuLancarExcecao(String codigoCnae) {
         return cnaeRepository.findByCodigo(codigoCnae)
-                .orElseGet(() -> cnaeRepository.findAll().getFirst());
-    }
-
-    private AtividadeEconomicaCnae buscarCnaeParaValidacao(String codigoCnae) {
-        return cnaeRepository.findByCodigo(codigoCnae)
-                .orElseGet(() -> cnaeRepository.findAll().getFirst());
+                .orElseThrow(() -> new ResponseStatusException(
+                        HttpStatus.BAD_REQUEST, "CNAE " + codigoCnae + " não encontrado. Cadastro não permitido."
+                ));
     }
 }

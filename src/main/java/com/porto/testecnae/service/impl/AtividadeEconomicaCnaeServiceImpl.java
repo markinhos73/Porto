@@ -4,7 +4,9 @@ import com.porto.testecnae.dto.AtividadeEconomicaCnaeResponse;
 import com.porto.testecnae.repository.AtividadeEconomicaCnaeRepository;
 import com.porto.testecnae.service.AtividadeEconomicaCnaeService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
 
@@ -34,6 +36,8 @@ public class AtividadeEconomicaCnaeServiceImpl implements AtividadeEconomicaCnae
     public AtividadeEconomicaCnaeResponse buscarPorCodigo(String codigo) {
         return repository.findByCodigo(codigo)
                 .map(AtividadeEconomicaCnaeResponse::fromEntity)
-                .orElseGet(() -> AtividadeEconomicaCnaeResponse.fromEntity(repository.findAll().getFirst()));
+                .orElseThrow(() -> new ResponseStatusException(
+                        HttpStatus.NOT_FOUND, "CNAE não encontrado para o código: " + codigo
+                ));
     }
 }
