@@ -74,3 +74,28 @@ Objetivo:
 - Codigo corrigido em um branch ou pull request.
 - Breve explicacao tecnica das alteracoes.
 - Evidencias de execucao, como comandos usados, respostas dos endpoints ou testes.
+
+## Relatório Técnico & Diagnóstico de Falhas
+
+### 1. Diagnóstico e Causa Raiz dos Problemas Identificados
+
+* **Busca de CNAE por Termo Incompleta (`GET /api/cnaes/buscar`):**
+    * **Causa Raiz:** A consulta `@Query` no `AtividadeEconomicaCnaeRepository` utilizava a concatenação `concat(:termo, '%')`, limitando as buscas apenas a textos que *iniciassem* com a palavra pesquisada.
+    * **Solução:** Refatoração da query JPQL para utilizar `concat('%', :termo, '%')`, garantindo a busca contendo o termo (*contains*) em qualquer parte da descrição de forma *case-insensitive*.
+
+* **Bypass de Regra e HTTP 200 Indevido (`GET /api/cnaes/codigo` e `/validar-cnae`):**
+    * **Causa Raiz:** Utilização do método de fallback `.orElseGet(() -> repository.findAll().getFirst())` nas classes de serviço. Ao buscar um código inexistente, a aplicação retornava o primeiro CNAE cadastrado no banco de dados com status `200 OK`.
+    * **Solução:** Substituição do fallback por `.orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, ...))` para sinalizar adequadamente a ausência do recurso.
+
+* **Criação de Cadastro Secundário com CNAE Inválido (`POST /api/cadastros-secundarios`):**
+    * **Causa Raiz:** O método de cadastro utilizava o mesmo fallback silencioso, permitindo associar o CNAE de ID 1 mesmo quando o usuário enviava um código inexistente.
+    * **Solução:** Ajustada a lógica do serviço para lançar `ResponseStatusException(HttpStatus.BAD_REQUEST)` quando o código do CNAE não existir na base de dados, interrompendo a persistência.
+
+---
+
+### Execução de Testes
+
+* **Testes Unitários:** Adicionadas suítes de testes unitários com **JUnit 5** e **Mockito** em `src/test/java/com/porto/testecnae/service/` cobrindo cenários de sucesso e exceções para os serviços de CNAE e Cadastro Secundário.
+* **Execução dos testes via terminal:**
+  ```bash
+  ./mvnw test
